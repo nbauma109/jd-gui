@@ -31,7 +31,7 @@ allprojects {
     repositories {
         mavenCentral()
         maven {
-            url 'https://raw.github.com/java-decompiler/mvn-repo/master'
+            url 'https://raw.github.com/nbauma109/mvn-repo/master'
         }
     }
 
