@@ -1,0 +1,5 @@
+# Order is important
+org.jdv142.gui.service.container.EarContainerFactoryProvider
+org.jdv142.gui.service.container.WarContainerFactoryProvider
+org.jdv142.gui.service.container.JarContainerFactoryProvider
+org.jdv142.gui.service.container.GenericContainerFactoryProvider
