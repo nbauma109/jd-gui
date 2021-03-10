@@ -11,18 +11,23 @@ import org.jd.gui.api.API;
 import org.jd.gui.util.exception.ExceptionUtil;
 import org.objectweb.asm.ClassReader;
 
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 
 public class ClassFileLoaderProvider extends AbstractTypeFileLoaderProvider {
     protected static final String[] EXTENSIONS = { "class" };
-    
-    public String[] getExtensions() { return EXTENSIONS; }
-    public String getDescription() { return "Class files (*.class)"; }
 
+    @Override public String[] getExtensions() { return EXTENSIONS; }
+    @Override public String getDescription() { return "Class files (*.class)"; }
+
+    @Override
     public boolean accept(API api, File file) {
-        return file.exists() && file.canRead() && file.getName().toLowerCase().endsWith(".class");
+        return file.exists() && file.isFile() && file.canRead() && file.getName().toLowerCase().endsWith(".class");
     }
 
+    @Override
     public boolean load(API api, File file) {
         try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file))) {
             ClassReader classReader = new ClassReader(bis);

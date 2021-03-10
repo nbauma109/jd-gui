@@ -7,10 +7,10 @@
 
 package org.jd.gui.util.parser.antlr;
 
-import org.jd.gui.api.model.Container;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.antlr.v4.runtime.tree.TerminalNodeImpl;
+import org.jd.gui.api.model.Container;
 import org.jd.gui.util.exception.ExceptionUtil;
 
 import java.util.HashMap;
@@ -114,8 +114,8 @@ public abstract class AbstractJavaListener extends JavaBaseListener {
                         typeNameCache.put(name, qualifiedName);
                         return qualifiedName;
                     }
-                } catch (ClassNotFoundException e) {
-                    assert ExceptionUtil.printStackTrace(e);
+                } catch (ClassNotFoundException ignore) {
+                    // Ignore class loading error
                 }
 
                 // Type not found

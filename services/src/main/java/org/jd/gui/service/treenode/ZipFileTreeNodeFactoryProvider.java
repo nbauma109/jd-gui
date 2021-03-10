@@ -16,29 +16,28 @@ import org.jd.gui.view.data.TreeNodeBean;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
+import java.io.File;
 
 public class ZipFileTreeNodeFactoryProvider extends DirectoryTreeNodeFactoryProvider {
-	protected static final ImageIcon ICON = new ImageIcon(ZipFileTreeNodeFactoryProvider.class.getClassLoader().getResource("org/jd/gui/images/zip_obj.png"));
+    protected static final ImageIcon ICON = new ImageIcon(ZipFileTreeNodeFactoryProvider.class.getClassLoader().getResource("org/jd/gui/images/zip_obj.png"));
 
-    @Override public String[] getSelectors() { return appendSelectors("*:file:*.zip"); }
+    @Override public String[] getSelectors() { return appendSelectors("*:file:*.zip", "*:file:*.aar"); }
 
     @Override
     @SuppressWarnings("unchecked")
     public <T extends DefaultMutableTreeNode & ContainerEntryGettable & UriGettable> T make(API api, Container.Entry entry) {
         int lastSlashIndex = entry.getPath().lastIndexOf("/");
-        String name = entry.getPath().substring(lastSlashIndex+1);
-        T node = (T)new TreeNode(entry, "generic", new TreeNodeBean(name, ICON));
+        String label = entry.getPath().substring(lastSlashIndex+1);
+        String location = new File(entry.getUri()).getPath();
+        T node = (T)new TreeNode(entry, new TreeNodeBean(label, "Location: " + location, ICON));
         // Add dummy node
         node.add(new DefaultMutableTreeNode());
         return node;
-	}
+    }
 
     protected static class TreeNode extends DirectoryTreeNodeFactoryProvider.TreeNode {
-        protected String ct;
-
-        public TreeNode(Container.Entry entry, String containerType, Object userObject) {
+        public TreeNode(Container.Entry entry, Object userObject) {
             super(entry, userObject);
-            ct = containerType;
         }
 
         // --- TreeNodeExpandable --- //

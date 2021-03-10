@@ -7,7 +7,10 @@
 
 package org.jd.gui.view.component;
 
-import org.fife.ui.rsyntaxtextarea.*;
+import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
+import org.fife.ui.rsyntaxtextarea.RSyntaxTextAreaEditorKit;
+import org.fife.ui.rsyntaxtextarea.RSyntaxTextAreaUI;
+import org.fife.ui.rsyntaxtextarea.RSyntaxUtilities;
 import org.fife.ui.rsyntaxtextarea.folding.Fold;
 import org.fife.ui.rsyntaxtextarea.folding.FoldManager;
 import org.fife.ui.rtextarea.Gutter;
@@ -42,38 +45,57 @@ public abstract class CustomLineNumbersPage extends HyperlinkPage {
     protected int[] lineNumberMap = null;
     protected int maxLineNumber = 0;
 
-    public void setMaxLineNumber(int maxLineNumber) {
+    protected void setMaxLineNumber(int maxLineNumber) {
         if (maxLineNumber > 0) {
             if (lineNumberMap == null) {
-                lineNumberMap = new int[maxLineNumber * 3 / 2];
+                lineNumberMap = new int[maxLineNumber+1];
             } else if (lineNumberMap.length <= maxLineNumber) {
-                int[] tmp = new int[maxLineNumber * 3 / 2];
+                int[] tmp = new int[maxLineNumber+1];
                 System.arraycopy(lineNumberMap, 0, tmp, 0, lineNumberMap.length);
                 lineNumberMap = tmp;
             }
 
-            if (this.maxLineNumber < maxLineNumber) {
-                this.maxLineNumber = maxLineNumber;
+            this.maxLineNumber = maxLineNumber;
+        }
+    }
+
+    protected void initLineNumbers() {
+        String text = getText();
+        int len = text.length();
+
+        if (len == 0) {
+            setMaxLineNumber(0);
+        } else {
+            int mln = len - text.replace("\n", "").length();
+
+            if (text.charAt(len-1) != '\n') {
+                mln++;
+            }
+
+            setMaxLineNumber(mln);
+
+            for (int i=1; i<=maxLineNumber; i++) {
+                lineNumberMap[i] = i;
             }
         }
     }
 
-    public void setLineNumber(int textAreaLineNumber, int originalLineNumber) {
+    protected void setLineNumber(int textAreaLineNumber, int originalLineNumber) {
         if (originalLineNumber > 0) {
             setMaxLineNumber(textAreaLineNumber);
             lineNumberMap[textAreaLineNumber] = originalLineNumber;
         }
     }
 
-    public void clearLineNumbers() {
+    protected void clearLineNumbers() {
         if (lineNumberMap != null) {
             Arrays.fill(lineNumberMap, 0);
         }
     }
 
-    public int getMaximumSourceLineNumber() { return maxLineNumber; }
+    protected int getMaximumSourceLineNumber() { return maxLineNumber; }
 
-    public int getTextAreaLineNumber(int originalLineNumber) {
+    protected int getTextAreaLineNumber(int originalLineNumber) {
         int textAreaLineNumber = 1;
         int greatestLowerSourceLineNumber = 0;
         int i = lineNumberMap.length;
@@ -93,22 +115,7 @@ public abstract class CustomLineNumbersPage extends HyperlinkPage {
 
     @Override protected RSyntaxTextArea newSyntaxTextArea() { return new SourceSyntaxTextArea(); }
 
-    public class SourceSyntaxTextArea extends RSyntaxTextArea {
-        /**
-         * @see HyperlinkPage.HyperlinkSyntaxTextArea#getUnderlineForToken(org.fife.ui.rsyntaxtextarea.Token)
-         */
-        @Override
-        public boolean getUnderlineForToken(Token t) {
-            Map.Entry<Integer, HyperlinkData> entry = hyperlinks.floorEntry(t.getOffset());
-            if (entry != null) {
-                HyperlinkData data = entry.getValue();
-                if ((data != null) && (t.getOffset() < data.endPosition) && (t.getOffset() >= data.startPosition) && isHyperlinkEnabled(data)) {
-                    return true;
-                }
-            }
-            return super.getUnderlineForToken(t);
-        }
-
+    public class SourceSyntaxTextArea extends HyperlinkSyntaxTextArea {
         @Override protected RTextAreaUI createRTextAreaUI() { return new SourceSyntaxTextAreaUI(this); }
     }
 

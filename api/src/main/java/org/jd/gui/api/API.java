@@ -18,6 +18,7 @@ import java.net.URI;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Map;
+import java.util.concurrent.Future;
 
 public interface API {
     boolean openURI(URI uri);
@@ -48,5 +49,15 @@ public interface API {
 
     Map<String, String> getPreferences();
 
-    Collection<Indexes> getCollectionOfIndexes();
+    Collection<Future<Indexes>> getCollectionOfFutureIndexes();
+
+    interface LoadSourceListener {
+        void sourceLoaded(String source);
+    }
+
+    String getSource(Container.Entry entry);
+
+    void loadSource(Container.Entry entry, LoadSourceListener listener);
+
+    File loadSourceFile(Container.Entry entry);
 }

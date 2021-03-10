@@ -31,7 +31,7 @@ public class JavaFilePage extends TypePage {
     public JavaFilePage(API api, Container.Entry entry) {
         super(api, entry);
         // Load content file
-        String text = TextReader.getText(entry.getInputStream()).replace("\r\n", "\n").replace("\r", "\n");
+        String text = TextReader.getText(entry.getInputStream()).replace("\r\n", "\n").replace('\r', '\n');
         // Parse
         DeclarationListener declarationListener = new DeclarationListener(entry);
         ReferenceListener referenceListener = new ReferenceListener(entry);
@@ -41,8 +41,7 @@ public class JavaFilePage extends TypePage {
         ANTLRJavaParser.parse(new ANTLRInputStream(text), referenceListener);
         // Display
         setText(text);
-        // Show hyperlinks
-        indexesChanged(api.getCollectionOfIndexes());
+        initLineNumbers();
     }
 
     public String getSyntaxStyle() { return SyntaxConstants.SYNTAX_STYLE_JAVA; }
@@ -229,7 +228,6 @@ public class JavaFilePage extends TypePage {
     }
 
     public class ReferenceListener extends AbstractJavaListener {
-
         protected StringBuilder sbTypeDeclaration = new StringBuilder();
         protected HashMap<String, TypePage.ReferenceData> referencesCache = new HashMap<>();
         protected String currentInternalTypeName;
@@ -394,7 +392,7 @@ public class JavaFilePage extends TypePage {
                                 }
                             }
                         }
-                    } else {
+                    } else if (ctx.primary() != null) {
                         TerminalNode identifier = ctx.primary().Identifier();
 
                         if (identifier != null) {

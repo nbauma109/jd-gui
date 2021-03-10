@@ -15,14 +15,21 @@ import org.jd.gui.view.component.Tree;
 import org.jd.gui.view.renderer.TreeNodeRenderer;
 
 import javax.swing.*;
-import javax.swing.event.*;
-import javax.swing.tree.*;
+import javax.swing.event.TreeExpansionEvent;
+import javax.swing.event.TreeExpansionListener;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreeNode;
+import javax.swing.tree.TreePath;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Enumeration;
+import java.util.Map;
 
 public class TreeTabbedPanel<T extends DefaultMutableTreeNode & ContainerEntryGettable & UriGettable> extends JPanel implements UriGettable, UriOpenable, PageChangeable, PageClosable, PreferencesChangeListener {
     protected API api;
@@ -101,9 +108,9 @@ public class TreeTabbedPanel<T extends DefaultMutableTreeNode & ContainerEntryGe
         tabbedPanel.setMinimumSize(new Dimension(150, 10));
         tabbedPanel.tabbedPane.addChangeListener(e -> pageChanged());
 
-		setLayout(new BorderLayout());
+        setLayout(new BorderLayout());
 
-		JSplitPane splitter = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, new JScrollPane(tree), tabbedPanel);
+        JSplitPane splitter = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, new JScrollPane(tree), tabbedPanel);
         splitter.setResizeWeight(0.2);
 
         add(splitter, BorderLayout.CENTER);
@@ -113,9 +120,9 @@ public class TreeTabbedPanel<T extends DefaultMutableTreeNode & ContainerEntryGe
         int hashCode = 1;
 
         while (enumeration.hasMoreElements()) {
-            Object element = enumeration.nextElement();
-
             hashCode *= 31;
+
+            Object element = enumeration.nextElement();
 
             if (element != null) {
                 hashCode += element.hashCode();
@@ -165,8 +172,6 @@ public class TreeTabbedPanel<T extends DefaultMutableTreeNode & ContainerEntryGe
         if ((page == null) && (baseNode instanceof PageCreator)) {
             page = ((PageCreator)baseNode).createPage(api);
             page.putClientProperty("node", baseNode);
-            page.putClientProperty("preferences-stamp", Integer.valueOf(api.getPreferences().hashCode()));
-            page.putClientProperty("collectionOfIndexes-stamp", Integer.valueOf(api.getCollectionOfIndexes().hashCode()));
 
             String path = baseUri.getPath();
             String label = path.substring(path.lastIndexOf('/')+1);
@@ -225,15 +230,28 @@ public class TreeTabbedPanel<T extends DefaultMutableTreeNode & ContainerEntryGe
     public boolean openUri(URI uri) {
         try {
             URI baseUri = new URI(uri.getScheme(), uri.getHost(), uri.getPath(), null);
-            DefaultMutableTreeNode baseNode = searchTreeNode(baseUri, (DefaultMutableTreeNode)tree.getModel().getRoot());
 
-            if ((baseNode != null) && showPage(uri, baseUri, baseNode)) {
-                DefaultMutableTreeNode node = searchTreeNode(uri, baseNode);
+            if (this.uri.equals(baseUri)) {
+                return true;
+            } else {
+                DefaultMutableTreeNode node = searchTreeNode(baseUri, (DefaultMutableTreeNode) tree.getModel().getRoot());
+
+                if (showPage(uri, baseUri, node)) {
+                    DefaultMutableTreeNode childNode = searchTreeNode(uri, node);
+                    if (childNode != null) {
+                        node = childNode;
+                    }
+                }
 
                 if (node != null) {
                     try {
                         // Disable tree node changed listener
                         treeNodeChangedEnabled = false;
+                        // Populate and expand node
+                        if (!(node instanceof PageCreator) && (node instanceof TreeNodeExpandable)) {
+                            ((TreeNodeExpandable) node).populateTreeNode(api);
+                            tree.expandPath(new TreePath(node.getPath()));
+                        }
                         // Select tree node
                         TreePath treePath = new TreePath(node.getPath());
                         tree.setSelectionPath(treePath);
@@ -242,8 +260,8 @@ public class TreeTabbedPanel<T extends DefaultMutableTreeNode & ContainerEntryGe
                         // Enable tree node changed listener
                         treeNodeChangedEnabled = true;
                     }
+                    return true;
                 }
-                return true;
             }
         } catch (URISyntaxException e) {
             assert ExceptionUtil.printStackTrace(e);
@@ -260,10 +278,10 @@ public class TreeTabbedPanel<T extends DefaultMutableTreeNode & ContainerEntryGe
 
         String u = uri.toString();
         T child = null;
-        Enumeration<T> enumeration = node.children();
+        Enumeration enumeration = node.children();
 
         while (enumeration.hasMoreElements()) {
-            T element = enumeration.nextElement();
+            T element = (T)enumeration.nextElement();
             String childU = element.getUri().toString();
 
             if (u.length() > childU.length()) {

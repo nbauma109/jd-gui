@@ -12,7 +12,7 @@ import org.jd.gui.api.feature.ContainerEntryGettable;
 import org.jd.gui.api.feature.TreeNodeExpandable;
 import org.jd.gui.api.feature.UriGettable;
 import org.jd.gui.api.model.Container;
-import org.jd.gui.model.container.FilteredContainerWrapper;
+import org.jd.gui.model.container.DelegatingFilterContainer;
 import org.jd.gui.spi.TreeNodeFactory;
 import org.jd.gui.util.function.TriConsumer;
 import org.jd.gui.util.swing.SwingUtil;
@@ -36,13 +36,14 @@ import java.util.function.BiConsumer;
 public class SearchInConstantPoolsView<T extends DefaultMutableTreeNode & ContainerEntryGettable & UriGettable> {
     protected static final ContainerComparator CONTAINER_COMPARATOR = new ContainerComparator();
 
-    public static final int SEARCH_TYPE_TYPE = 1;
-    public static final int SEARCH_TYPE_CONSTRUCTOR = 2;
-    public static final int SEARCH_TYPE_METHOD = 4;
-    public static final int SEARCH_TYPE_FIELD = 8;
-    public static final int SEARCH_TYPE_STRING = 16;
-    public static final int SEARCH_TYPE_DECLARATION = 32;
-    public static final int SEARCH_TYPE_REFERENCE = 64;
+    public static final int SEARCH_TYPE = 1;
+    public static final int SEARCH_CONSTRUCTOR = 2;
+    public static final int SEARCH_METHOD = 4;
+    public static final int SEARCH_FIELD = 8;
+    public static final int SEARCH_STRING = 16;
+    public static final int SEARCH_MODULE = 32;
+    public static final int SEARCH_DECLARATION = 64;
+    public static final int SEARCH_REFERENCE = 128;
 
     protected API api;
     protected Set<URI> accepted = new HashSet<>();
@@ -56,6 +57,7 @@ public class SearchInConstantPoolsView<T extends DefaultMutableTreeNode & Contai
     protected JCheckBox searchInConstantPoolsCheckBoxConstructor;
     protected JCheckBox searchInConstantPoolsCheckBoxMethod;
     protected JCheckBox searchInConstantPoolsCheckBoxString;
+    protected JCheckBox searchInConstantPoolsCheckBoxModule;
     protected JCheckBox searchInConstantPoolsCheckBoxDeclarations;
     protected JCheckBox searchInConstantPoolsCheckBoxReferences;
     protected Tree searchInConstantPoolsTree;
@@ -159,6 +161,8 @@ public class SearchInConstantPoolsView<T extends DefaultMutableTreeNode & Contai
             subsubpanel.setLayout(new GridLayout(2, 1));
             subsubpanel.add(searchInConstantPoolsCheckBoxString = new JCheckBox("String Constant"));
             searchInConstantPoolsCheckBoxString.addItemListener(checkBoxListener);
+            subsubpanel.add(searchInConstantPoolsCheckBoxModule = new JCheckBox("Java Module"));
+            searchInConstantPoolsCheckBoxModule.addItemListener(checkBoxListener);
             subhbox.add(subsubpanel);
 
             subpanel = new JPanel();
@@ -246,7 +250,6 @@ public class SearchInConstantPoolsView<T extends DefaultMutableTreeNode & Contai
                     if (selectedTreeNode != null) {
                         selectedTypeCallback.accept(selectedTreeNode.getUri(), searchInConstantPoolsEnterTextField.getText(), getFlags());
                     }
-                    searchInConstantPoolsDialog.setVisible(false);
                 }
             };
             searchInConstantPoolsOpenButton.addActionListener(searchInConstantPoolsOpenActionListener);
@@ -338,19 +341,21 @@ public class SearchInConstantPoolsView<T extends DefaultMutableTreeNode & Contai
         int flags = 0;
 
         if (searchInConstantPoolsCheckBoxType.isSelected())
-            flags += SEARCH_TYPE_TYPE;
+            flags += SEARCH_TYPE;
         if (searchInConstantPoolsCheckBoxConstructor.isSelected())
-            flags += SEARCH_TYPE_CONSTRUCTOR;
+            flags += SEARCH_CONSTRUCTOR;
         if (searchInConstantPoolsCheckBoxMethod.isSelected())
-            flags += SEARCH_TYPE_METHOD;
+            flags += SEARCH_METHOD;
         if (searchInConstantPoolsCheckBoxField.isSelected())
-            flags += SEARCH_TYPE_FIELD;
+            flags += SEARCH_FIELD;
         if (searchInConstantPoolsCheckBoxString.isSelected())
-            flags += SEARCH_TYPE_STRING;
+            flags += SEARCH_STRING;
+        if (searchInConstantPoolsCheckBoxModule.isSelected())
+            flags += SEARCH_MODULE;
         if (searchInConstantPoolsCheckBoxDeclarations.isSelected())
-            flags += SEARCH_TYPE_DECLARATION;
+            flags += SEARCH_DECLARATION;
         if (searchInConstantPoolsCheckBoxReferences.isSelected())
-            flags += SEARCH_TYPE_REFERENCE;
+            flags += SEARCH_REFERENCE;
 
         return flags;
     }
@@ -364,7 +369,7 @@ public class SearchInConstantPoolsView<T extends DefaultMutableTreeNode & Contai
     }
 
     @SuppressWarnings("unchecked")
-    public void updateTree(Collection<FilteredContainerWrapper> containers, int matchingTypeCount) {
+    public void updateTree(Collection<DelegatingFilterContainer> containers, int matchingTypeCount) {
         SwingUtil.invokeLater(() -> {
             DefaultTreeModel model = (DefaultTreeModel)searchInConstantPoolsTree.getModel();
             T root = (T)model.getRoot();
@@ -376,11 +381,11 @@ public class SearchInConstantPoolsView<T extends DefaultMutableTreeNode & Contai
             expanded.clear();
 
             if (containers != null) {
-                ArrayList<FilteredContainerWrapper> list = new ArrayList<>(containers);
+                ArrayList<DelegatingFilterContainer> list = new ArrayList<>(containers);
 
                 list.sort(CONTAINER_COMPARATOR);
 
-                for (FilteredContainerWrapper container : list) {
+                for (DelegatingFilterContainer container : list) {
                     // Init uri set
                     accepted.addAll(container.getUris());
                     // Populate tree

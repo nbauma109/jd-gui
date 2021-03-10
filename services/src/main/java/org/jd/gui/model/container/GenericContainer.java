@@ -87,13 +87,18 @@ public class GenericContainer implements Container {
 
         public String getPath() {
             if (strPath == null) {
-                if (rootNameCount == fsPath.getNameCount()) {
+                int nameCount = fsPath.getNameCount();
+
+                if (rootNameCount == nameCount) {
                     strPath = "";
                 } else {
-                    strPath = fsPath.subpath(rootNameCount, fsPath.getNameCount()).toString();
-                    if (strPath.endsWith(fsPath.getFileSystem().getSeparator())) {
+                    strPath = fsPath.subpath(rootNameCount, nameCount).toString().replace(fsPath.getFileSystem().getSeparator(), "/");
+
+                    int strPathLength = strPath.length();
+
+                    if ((strPathLength > 0) && strPath.charAt(strPathLength-1) == '/') {
                         // Cut last separator
-                        strPath = strPath.substring(0, strPath.length()-fsPath.getFileSystem().getSeparator().length());
+                        strPath = strPath.substring(0, strPathLength-1);
                     }
                 }
             }
@@ -162,8 +167,8 @@ public class GenericContainer implements Container {
             Path tmpPath = Paths.get(tmpFile.toURI());
 
             tmpFile.delete();
-            Files.copy(fsPath, tmpPath);
             tmpFile.deleteOnExit();
+            Files.copy(fsPath, tmpPath);
 
             FileSystem subFileSystem = FileSystems.newFileSystem(tmpPath, null);
 

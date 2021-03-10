@@ -19,7 +19,10 @@ import org.jd.gui.util.exception.ExceptionUtil;
 import javax.swing.*;
 import javax.swing.text.BadLocationException;
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseWheelListener;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
@@ -99,9 +102,9 @@ public class AbstractTextPage extends JPanel implements LineNumberNavigable, Con
 
                 // Update font size
                 if (e.getWheelRotation() > 0) {
-                    INCREASE_FONT_SIZE_ACTION.actionPerformedImpl(null, textArea);
-                } else {
                     DECREASE_FONT_SIZE_ACTION.actionPerformedImpl(null, textArea);
+                } else {
+                    INCREASE_FONT_SIZE_ACTION.actionPerformedImpl(null, textArea);
                 }
 
                 // Save preferences
@@ -140,6 +143,10 @@ public class AbstractTextPage extends JPanel implements LineNumberNavigable, Con
 
     public String getText() { return textArea.getText(); }
 
+    public JScrollPane getScrollPane() {
+        return scrollPane;
+    }
+
     public void setText(String text) {
         textArea.setText(text);
         textArea.setCaretPosition(0);
@@ -164,23 +171,21 @@ public class AbstractTextPage extends JPanel implements LineNumberNavigable, Con
 
         if (!foldsExpanded) {
             try {
-                Rectangle r = textArea.modelToView(start);
+                Rectangle rec = textArea.modelToView(start);
 
-                if (r != null) {
+                if (rec != null) {
                     // Visible
-                    setCaretPositionAndCenter(start, end, r);
+                    setCaretPositionAndCenter(start, end, rec);
                 } else {
                     // Not visible yet
-                    SwingUtilities.invokeLater(new Runnable() {
-                        public void run() {
-                            try {
-                                Rectangle r = textArea.modelToView(start);
-                                if (r != null) {
-                                    setCaretPositionAndCenter(start, end, r);
-                                }
-                            } catch (BadLocationException e) {
-                                assert ExceptionUtil.printStackTrace(e);
+                    SwingUtilities.invokeLater(() -> {
+                        try {
+                            Rectangle r = textArea.modelToView(start);
+                            if (r != null) {
+                                setCaretPositionAndCenter(start, end, r);
                             }
+                        } catch (BadLocationException e) {
+                            assert ExceptionUtil.printStackTrace(e);
                         }
                     });
                 }

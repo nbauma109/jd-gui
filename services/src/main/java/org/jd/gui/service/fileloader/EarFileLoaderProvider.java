@@ -14,10 +14,11 @@ import java.io.File;
 public class EarFileLoaderProvider extends ZipFileLoaderProvider {
     protected static final String[] EXTENSIONS = { "ear" };
 
-    public String[] getExtensions() { return EXTENSIONS; }
-    public String getDescription() { return "Ear files (*.ear)"; }
+    @Override public String[] getExtensions() { return EXTENSIONS; }
+    @Override public String getDescription() { return "Enterprise application archive files (*.ear)"; }
 
+    @Override
     public boolean accept(API api, File file) {
-        return file.exists() && file.canRead() && file.getName().toLowerCase().endsWith(".ear");
+        return file.exists() && file.isFile() && file.canRead() && file.getName().toLowerCase().endsWith(".ear");
     }
 }

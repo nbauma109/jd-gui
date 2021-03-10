@@ -18,48 +18,56 @@ import org.jd.gui.util.exception.ExceptionUtil;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collection;
+import java.util.concurrent.Future;
 
 public class UriUtil {
     /*
      * Convert inner entry URI to outer entry uri with a fragment. Example:
      *  file://codebase/a/b/c/D$E.class => file://codebase/a/b/c/D.class#typeDeclaration=D$E
      */
-    public static URI createURI(API api, Collection<Indexes> collectionOfIndexes, Container.Entry entry, String query, String fragment) {
-        TypeFactory typeFactory = TypeFactoryService.getInstance().get(entry);
+    public static URI createURI(API api, Collection<Future<Indexes>> collectionOfFutureIndexes, Container.Entry entry, String query, String fragment) {
+        URI uri = entry.getUri();
 
-        if (typeFactory != null) {
-            Type type = typeFactory.make(api, entry, fragment);
+        try {
+            String path = uri.getPath();
+            TypeFactory typeFactory = TypeFactoryService.getInstance().get(entry);
 
-            if (type != null) {
-                URI uri = entry.getUri();
-                String path = getOuterPath(collectionOfIndexes, entry, type);
+            if (typeFactory != null) {
+                Type type = typeFactory.make(api, entry, fragment);
 
-                try {
-                    return new URI(uri.getScheme(), uri.getHost(), path, query, fragment);
-                } catch (URISyntaxException e) {
-                    ExceptionUtil.printStackTrace(e);
+                if (type != null) {
+                    path = getOuterPath(collectionOfFutureIndexes, entry, type);
                 }
             }
-        }
 
-        return null;
+            return new URI(uri.getScheme(), uri.getHost(), path, query, fragment);
+        } catch (URISyntaxException e) {
+            assert ExceptionUtil.printStackTrace(e);
+            return uri;
+        }
     }
 
     @SuppressWarnings("unchecked")
-    protected static String getOuterPath(Collection<Indexes> collectionOfIndexes, Container.Entry entry, Type type) {
+    protected static String getOuterPath(Collection<Future<Indexes>> collectionOfFutureIndexes, Container.Entry entry, Type type) {
         String outerName = type.getOuterName();
 
         if (outerName != null) {
-            for (Indexes indexes : collectionOfIndexes) {
-                Collection<Container.Entry> outerEntries = indexes.getIndex("typeDeclarations").get(outerName);
+            try {
+                for (Future<Indexes> futureIndexes : collectionOfFutureIndexes) {
+                    if (futureIndexes.isDone()) {
+                        Collection<Container.Entry> outerEntries = futureIndexes.get().getIndex("typeDeclarations").get(outerName);
 
-                if (outerEntries != null) {
-                    for (Container.Entry outerEntry : outerEntries) {
-                        if (outerEntry.getContainer() == entry.getContainer()) {
-                            return outerEntry.getUri().getPath();
+                        if (outerEntries != null) {
+                            for (Container.Entry outerEntry : outerEntries) {
+                                if (outerEntry.getContainer() == entry.getContainer()) {
+                                    return outerEntry.getUri().getPath();
+                                }
+                            }
                         }
                     }
                 }
+            } catch (Exception e) {
+                assert ExceptionUtil.printStackTrace(e);
             }
         }
 

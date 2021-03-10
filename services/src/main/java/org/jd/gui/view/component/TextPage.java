@@ -15,27 +15,33 @@ import org.jd.gui.util.exception.ExceptionUtil;
 import org.jd.gui.util.io.NewlineOutputStream;
 
 import java.awt.datatransfer.StringSelection;
-import java.io.*;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 
 public class TextPage extends AbstractTextPage implements ContentCopyable, ContentSelectable, ContentSavable {
 
     // --- ContentCopyable --- //
+    @Override
     public void copy() {
         if (textArea.getSelectionStart() == textArea.getSelectionEnd()) {
             getToolkit().getSystemClipboard().setContents(new StringSelection(""), null);
         } else {
-            textArea.copyAsRtf();
+            textArea.copyAsStyledText();
         }
     }
 
     // --- ContentSelectable --- //
+    @Override
     public void selectAll() {
         textArea.selectAll();
     }
 
     // --- ContentSavable --- //
+    @Override
     public String getFileName() { return "file.txt"; }
 
+    @Override
     public void save(API api, OutputStream os) {
         try (OutputStreamWriter writer = new OutputStreamWriter(new NewlineOutputStream(os), "UTF-8")) {
             writer.write(textArea.getText());
