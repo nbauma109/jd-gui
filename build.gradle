@@ -51,7 +51,8 @@ subprojects.each { subproject ->
 
 shadowJar {
     dependsOn subprojects.tasks['jar']
-	relocate 'org.jd', 'org.jdv142'
+	relocate 'org.jd', 'org.jdv0'
+	relocate 'jd.core', 'org.jdv0.core'
     // Add SPI directory
     def tmpSpiDir = file('build/tmp/spi')
     from tmpSpiDir
@@ -69,12 +70,12 @@ shadowJar {
     from deps
 
     manifest {
-        attributes 'Main-Class': 'org.jdv142.gui.App',
+        attributes 'Main-Class': 'org.jdv0.gui.App',
                 'SplashScreen-Image': 'org/jd/gui/images/jd_icon_128.png',
                 'JD-GUI-Version': project.version,
                 'JD-Core-Version': '0.7.1'
     }
-    exclude 'META-INF/licenses/**', 'META-INF/maven/**', 'META-INF/INDEX.LIST'
+    exclude 'META-INF/licenses/**', 'META-INF/maven/**', 'META-INF/INDEX.LIST', '/META-INF/services/org.jd.*'
     duplicatesStrategy DuplicatesStrategy.EXCLUDE
     doFirst {
         // Create SPI directory
@@ -86,8 +87,8 @@ shadowJar {
             def servicesDir = file(subproject.sourceSets.main.output.resourcesDir.path + '/META-INF/services')
             if (servicesDir.exists()) {
                 servicesDir.eachFile { serviceFile ->
-                    def target = file(tmpSpiServicesDir.path + '/' + serviceFile.name)
-                    target << serviceFile.text
+                    def target = file(tmpSpiServicesDir.path + '/' + serviceFile.name.replace('org.jd','org.jdv0'))
+                    target << serviceFile.text.replace('org.jd','org.jdv0')
                 }
             }
         }
