@@ -1,4 +1,4 @@
-This project has moved [here](https://github.com/nbauma109/jd-gui-duo) !
+This project is unmaintained; for an actively maintained successor, see [JD-GUI-DUO](https://github.com/nbauma109/jd-gui-duo).
 
 A lot of changes have made the project unlikely to be merged into the original one :
 * [ANTLR](https://www.antlr.org/) and the outdated JDK7 grammar [Java.g4](https://github.com/java-decompiler/jd-gui/blob/master/services/src/main/antlr/Java.g4) are dropped and replaced by [Eclipse JDT Core](https://github.com/eclipse-jdt/eclipse.jdt.core) to take advantage of nice features such as type bindings, compiler errors/warnings, and a more convenient AST
